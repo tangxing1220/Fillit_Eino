@@ -6,21 +6,24 @@
 /*   By: elindber <marvin@42.fr>                    +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2019/12/03 18:48:00 by elindber          #+#    #+#             */
-/*   Updated: 2019/12/10 17:56:53 by elindber         ###   ########.fr       */
+/*   Updated: 2019/12/11 19:55:26 by elindber         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "header_fillit.h"
 
-static void	free_map(t_map *map)
+/*
+** This function frees the map when we have to grow it's size and als after the
+** solution so that we don't have memory leaks.
+*/
+
+void		free_map(t_map *map)
 {
 	int	y;
 
 	y = 0;
 	while (map->dots[y])
-	{
 		y++;
-	}
 	while (y != -1)
 	{
 		ft_strdel(&map->dots[y]);
@@ -28,9 +31,15 @@ static void	free_map(t_map *map)
 	}
 	free(map->dots);
 	map->dots = NULL;
+	free(map);
 }
 
-int		map_size(int size)
+/*
+** This function counts the size of the smallest possible square and returns
+** it to the create_map functions which then creates the map of that size.
+*/
+
+int			map_size(int size)
 {
 	int		count;
 
@@ -39,6 +48,13 @@ int		map_size(int size)
 		count++;
 	return (count);
 }
+
+/*
+** We get the int size from map_size function. Then we allocate memory for the
+** map itself. Then we allocate memory for the square (map->dots) line by line.
+** After that we call place_tmns which solves the square. If it can't solve the
+** square we call create_map again but with a one bigger square size.
+*/
 
 int			create_map(t_tetri *list, int size)
 {
@@ -53,13 +69,12 @@ int			create_map(t_tetri *list, int size)
 	map->size = size;
 	while (y < size)
 	{
-		map->dots[y] = ft_memset(ft_strnew(size), '.', size);
-	//	printf("%s\n", map->dots[y]);
+		if (!(map->dots[y] = ft_memset(ft_strnew(size), '.', size)))
+			return (-1);
 		y++;
 	}
 	map->dots[y] = NULL;
-//	printf("\n");
-	if(!place_tmns(list, map))
+	if (!place_tmns(list, map))
 	{
 		free_map(map);
 		create_map(list, size + 1);
@@ -67,7 +82,12 @@ int			create_map(t_tetri *list, int size)
 	return (0);
 }
 
-int	count_nodes(t_tetri *list)
+/*
+** This function counts the amount of tetriminoes so that we can calculate
+** the size of smallest possible square for the pieces.
+*/
+
+int			count_nodes(t_tetri *list)
 {
 	int	i;
 
